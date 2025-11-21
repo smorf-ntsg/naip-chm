@@ -1,0 +1,167 @@
+# Training Configuration
+
+# Data configuration
+data:
+  # Path to the metadata file (e.g., a Parquet or CSV file).
+  # This file should contain information about the data samples.
+  # metadata_path: "/path/to/your/metadata.parquet"
+  metadata_path: "data/training_metadata/metadata.parquet" 
+  
+  # Base directory where the actual data is stored.
+  # base_path: "/path/to/your/data"
+  base_path: "data/training_dataset"
+  
+  # Target size for input data if resizing is needed (e.g., for images).
+  target_size: 432
+  
+  # Enable/disable training data augmentation (spatial and spectral transforms)
+  augment_train: true
+
+# Model configuration  
+model:
+  # --- Image Encoder (e.g., UNet) ---
+  # Number of input channels for the image data (e.g., 3 for RGB, 4 for RGB+NIR).
+  n_image_channels: 4
+  # Number of output channels for the model's primary prediction.
+  n_output_channels: 1
+  # Defines the number of channels in each layer of the UNet.
+  unet_channels: [64, 128, 256, 512, 1024]
+  # Whether to use bilinear upsampling instead of transposed convolutions in the UNet decoder.
+  bilinear: true
+  
+  # --- Attention Mechanism (e.g., CBAM) ---
+  # Set to true to enable the CBAM attention mechanism in the model.
+  use_cbam: true
+  # Reduction ratio for the channel attention module.
+  cbam_ratio: 8
+  # Kernel size for the spatial attention module.
+  cbam_kernel_size: 7
+  
+  # --- Auxiliary Feature Handling ---
+  # Dimension of the continuous (numerical) feature vector.
+  continuous_dim: 15
+  # Number of classes for NLCD (National Land Cover Database) categorical feature.
+  nlcd_classes: 9
+  # Embedding dimension for the NLCD feature.
+  nlcd_embedding_dim: 8
+  # Number of classes for the ecoregion categorical feature.
+  ecoregion_classes: 86
+  # Embedding dimension for the ecoregion feature.
+  ecoregion_embedding_dim: 16
+  
+  # --- MLP for Auxiliary Features ---
+  # Defines the number of neurons in the hidden layers of the MLP.
+  mlp_hidden_dims: [128, 256, 512]
+  # Dimension of the shared representation space before combining with image features.
+  mlp_shared_dim: 1024
+  # Activation function to use in the MLP (e.g., 'relu', 'gelu').
+  mlp_activation: 'gelu'
+  # Dropout rates for each hidden layer of the MLP for regularization.
+  mlp_dropout_rates: [0.1, 0.1, 0.1]
+  
+  # --- Feature Integration (e.g., FiLM) ---
+  # The number of FiLM stages is hardcoded in the model architecture; this parameter is not used.
+  
+  # --- Regularization ---
+  # Dropout rates for the encoder part of the UNet.
+  dropout_rates: [0.1, 0.1, 0.15, 0.2]
+  
+  # --- Normalization ---
+  # Number of groups for Group Normalization. Helps with small batch sizes.
+  num_groups: 32
+
+# Training configuration
+training:
+  # If true, the image encoder (e.g., UNet) weights are frozen and not trained.
+  # Set to false for fine-tuning the entire model.
+  freeze_unet: false
+  
+  # If true, the FiLM layers (aux_mlp + film_projections) are frozen and not trained.
+  # Set to false for training auxiliary feature conditioning.
+  freeze_film: false
+  
+  # --- Core Training Parameters ---
+  # Number of samples per batch. Adjust based on GPU memory.
+  batch_size: 32
+  # Random seed for reproducibility.
+  seed: 42
+  
+  # --- Optimizer Settings ---
+  # The optimizer is hardcoded as AdamW in the training script; this parameter is not used.
+  # Initial learning rate for the optimizer.
+  learning_rate: 1.e-4
+  # Weight decay for regularization.
+  weight_decay: 0.0001
+
+  
+  # --- Training Duration ---
+  # Number of initial steps for a learning rate warmup phase.
+  warmup_steps: 10000
+  # Total number of training steps.
+  max_steps: 2000000
+  
+  # --- Loss Function ---
+  # The loss function is hardcoded as Huber loss in the training script; this parameter is not used.
+  # Delta parameter for the Huber loss, defining the transition point from quadratic to linear.
+  huber_delta: 1.0
+  
+  # --- Mixed Precision Training (AMP) ---
+  amp:
+    # Set to true to enable Automatic Mixed Precision for faster training.
+    enabled: true
+    # The dtype for mixed precision is hardcoded in the training script; this parameter is not used.
+  
+  # --- Learning Rate Scheduler ---
+  scheduler:
+    # The scheduler strategy is hardcoded in the training script; this parameter is not used.
+    # Configuration for the ReduceLROnPlateau scheduler.
+    plateau:
+      # Number of validation checks with no improvement before reducing LR.
+      patience_checkpoints: 3
+      # Factor by which the learning rate will be reduced (new_lr = lr * factor).
+      factor: 0.5
+      # The minimum learning rate.
+      min_lr: 1.e-6
+  
+  # --- Gradient Clipping ---
+  # Maximum norm for gradients to prevent exploding gradients.
+  gradient_clip: 1.0
+  
+  # --- Checkpointing ---
+  checkpoint:
+    # Directory where model checkpoints will be saved.
+    save_dir: "checkpoints/"
+    # Time interval in hours for saving checkpoints.
+    time_interval_hours: 4
+    # Number of samples to use for the validation subset during checkpointing.
+    subset_val_size: 100000
+
+# Data loader configuration
+dataloader:
+  # Number of worker processes for loading data.
+  num_workers: 16
+  # If true, the data loader will copy tensors into pinned memory before returning them.
+  pin_memory: true
+  # If true, worker processes will not be shut down after an epoch.
+  persistent_workers: false
+  # Number of batches to prefetch.
+  prefetch_factor: 2
+
+# Logging configuration
+logging:
+  # Directory for storing log files.
+  log_dir: "logs/"
+  # Interval (in steps) for logging training metrics.
+  log_interval: 100
+  
+  # --- TensorBoard Logging ---
+  tensorboard:
+    # Set to true to enable TensorBoard logging.
+    enabled: true
+
+# Distributed training configuration
+distributed:
+  # The backend is hardcoded as 'nccl' in the training script; this parameter is not used.
+  # The world_size is read from an environment variable; this parameter is not used.
+  # If true, allows training with parts of the model graph not having gradients.
+  find_unused_parameters: false
