@@ -14,7 +14,8 @@ import numpy as np
 import rasterio
 import torch
 import yaml
-from rasterio.transform import from_bounds
+import pyproj
+from rasterio.transform import from_bounds, Affine, array_bounds
 from rasterio.crs import CRS
 
 from src.model import create_model
@@ -70,33 +71,61 @@ class GEEInferenceStreamer:
         from src.utils.gee import initialize_gee
         initialize_gee(project_id)
         
-        # 1. Get DOQQ Geometry
+        # 1. Get DOQQ Geometry and Metadata
         image_id, geometry, info = get_naip_doqq_geometry(lat, lon, year)
         logger.info(f"Processing DOQQ: {image_id}")
         
-        # Get bounds in EPSG:5070
-        # We transform the geometry to 5070 to get accurate meter dimensions
-        geom_5070 = geometry.transform('EPSG:5070', 1) # 1m error margin
-        coords = geom_5070.bounds(1).getInfo()['coordinates'][0]
-        xs = [p[0] for p in coords]
-        ys = [p[1] for p in coords]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
+        # Get Native Projection Info
+        # NAIP usually has 4 bands. We use the first band for metadata.
+        band0 = info['bands'][0]
+        native_crs_code = band0['crs']
+        native_transform_list = band0['crs_transform'] 
+        # GEE transform: [xScale, xShearing, xTranslation, yShearing, yScale, yTranslation]
+        native_transform = Affine(*native_transform_list)
+        native_width = band0['dimensions'][0]
+        native_height = band0['dimensions'][1]
         
-        # Calculate dimensions at 0.6m resolution
-        pixel_size = 0.6
-        width = int((max_x - min_x) / pixel_size)
-        height = int((max_y - min_y) / pixel_size)
+        logger.info(f"Native CRS: {native_crs_code}")
+        logger.info(f"Native Dimensions: {native_width}x{native_height}")
+        logger.info(f"Native Transform: {native_transform}")
+
+        # 2. Determine Target Grid (0.6m resolution)
+        # Calculate native resolution
+        res_x = abs(native_transform.a)
+        res_y = abs(native_transform.e)
+        target_res = 0.6
         
-        logger.info(f"DOQQ Grid: {width}x{height} pixels ({pixel_size}m res)")
+        # Check if resampling is needed
+        if abs(res_x - target_res) > 0.006 or abs(res_y - target_res) > 0.006:
+            logger.info(f"Resampling from {res_x:.2f}m to {target_res}m")
+            
+            # Calculate native bounds
+            left, bottom, right, top = array_bounds(native_height, native_width, native_transform)
+            
+            # Calculate new dimensions based on target resolution
+            width = int((right - left) / target_res)
+            height = int((top - bottom) / target_res)
+            
+            # Construct new transform
+            transform = from_bounds(left, bottom, right, top, width, height)
+        else:
+            logger.info(f"Native resolution {res_x:.2f}m matches target. Using native grid.")
+            width = native_width
+            height = native_height
+            transform = native_transform
+            
+        crs = CRS.from_string(native_crs_code)
+        logger.info(f"Target Grid: {width}x{height} pixels")
         
-        transform = from_bounds(min_x, min_y, max_x, max_y, width, height)
-        crs = CRS.from_epsg(5070)
+        # Setup coordinate transformer for aux data (Native -> Lat/Lon)
+        # We need this to query conditioning data which requires Lat/Lon (or we pass point object)
+        # Since fetch_conditioning_vector creates a Point from lat/lon, we transform to lat/lon.
+        to_latlon = pyproj.Transformer.from_crs(crs, "EPSG:4326", always_xy=True)
         
-        # 2. Generate Chip Grid
+        # 3. Generate Chip Grid
         chips = create_chip_grid(width, height, chip_size, overlap_fraction)
         
-        # 3. Prepare Blending
+        # 4. Prepare Blending
         overlap_pixels = int(chip_size * overlap_fraction)
         clip_pixels = overlap_pixels // 4
         base_weight_mask = create_distance_weight_mask(chip_size, chip_size, clip_pixels)
@@ -105,46 +134,50 @@ class GEEInferenceStreamer:
         chm_output = np.zeros((height, width), dtype=np.float32)
         weight_output = np.zeros((height, width), dtype=np.float32)
         
-        # 4. Streaming Loop
+        # 5. Streaming Loop
         # Helper to fetch data for a single chip
         def fetch_chip_task(chip_args):
             c_idx, r_start, c_start, r_end, c_end = chip_args
             
-            # Calculate chip bounds in EPSG:5070
-            left = min_x + c_start * pixel_size
-            top = max_y - r_start * pixel_size
-            right = min_x + c_end * pixel_size
-            bottom = max_y - r_end * pixel_size
+            # Calculate chip bounds in Target CRS (which is Native CRS aligned)
+            # Using rasterio.windows.bounds equivalent logic
+            # Affine transform: col -> x, row -> y
+            # Top-Left
+            left, top = transform * (c_start, r_start)
+            # Bottom-Right
+            right, bottom = transform * (c_end, r_end)
+            # Note: 'top' is usually > 'bottom' in projected coords (y increases North)
+            # But Affine transform handles the sign of 'e' (usually negative).
             
-            # Create EE geometry for the chip
-            # Note: 'top' is ymax, 'bottom' is ymin. But in raster coords, row 0 is top.
-            chip_geom = ee.Geometry.Rectangle([left, bottom, right, top], 'EPSG:5070', False)
+            # Create EE geometry for the chip in Native CRS
+            # ee.Geometry.Rectangle takes [xMin, yMin, xMax, yMax]
+            x_min, x_max = min(left, right), max(left, right)
+            y_min, y_max = min(bottom, top), max(bottom, top)
+            
+            chip_geom = ee.Geometry.Rectangle([x_min, y_min, x_max, y_max], native_crs_code, False)
             
             # Get Center for conditioning
-            center_x = (left + right) / 2
-            center_y = (bottom + top) / 2
-            # Convert center to lat/lon for conditioning vector fetch (helper expects lat/lon if needed?)
-            # Actually fetch_conditioning_vector in gee.py expects lat/lon.
-            # So we need to transform back to 4326.
-            # Or update fetch_conditioning_vector to take 5070 coords. 
-            # The current implementation expects lat/lon. Let's transform.
-            import pyproj
-            transformer = pyproj.Transformer.from_crs(5070, 4326, always_xy=True)
-            lon_c, lat_c = transformer.transform(center_x, center_y)
+            center_x = (x_min + x_max) / 2
+            center_y = (y_min + y_max) / 2
+            
+            # Transform to Lat/Lon
+            lon_c, lat_c = to_latlon.transform(center_x, center_y)
             
             try:
                 # Fetch raster
+                # We request the specific shape we expect
+                req_height = r_end - r_start
+                req_width = c_end - c_start
+                
                 img_data = fetch_chip_data(
                     image_id, 
                     chip_geom, 
-                    shape=(r_end-r_start, c_end-c_start)
+                    shape=(req_height, req_width),
+                    crs=native_crs_code
                 )
                 
                 # Fetch vector
-                # Calculate DOY from image ID if possible or assume mid-summer?
-                # NAIP usually has date in metadata. 'system:time_start'.
                 img_date = ee.Image(image_id).get('system:time_start').getInfo()
-                # Convert millis to DOY
                 doy = time.gmtime(img_date / 1000).tm_yday
                 
                 cond_data = fetch_conditioning_vector(lat_c, lon_c, doy)
@@ -162,7 +195,7 @@ class GEEInferenceStreamer:
         # Use ThreadPoolExecutor
         processed_count = 0
         with ThreadPoolExecutor(max_workers=8) as executor:
-            # Submit all tasks (or batch them if memory is tight, but 8 threads is fine)
+            # Submit all tasks
             futures = []
             for i, (r_s, c_s, r_e, c_e) in enumerate(chips):
                 futures.append(executor.submit(fetch_chip_task, (i, r_s, c_s, r_e, c_e)))
@@ -181,7 +214,6 @@ class GEEInferenceStreamer:
                 r_s, c_s, r_e, c_e = result['coords']
                 
                 # Prepare inputs
-                # Image
                 image_tensor = torch.from_numpy(img_data).unsqueeze(0).to(self.device)
                 
                 # Conditioning
@@ -219,23 +251,23 @@ class GEEInferenceStreamer:
         valid_weights = weight_output > 0
         chm_output[valid_weights] /= weight_output[valid_weights]
         
-        # 5. Post-processing
+        # 6. Post-processing
         # Convert to cm
         chm_output = chm_output * 100.0
         chm_output = np.clip(chm_output, 0, 65535) # Safety clip for uint16
         chm_uint16 = chm_output.astype(np.uint16)
         
         # Edge Trimming (30m)
-        trim_pixels = int(30.0 / pixel_size) # 30 / 0.6 = 50 pixels
+        # Local inference clips 30m from edges
+        trim_pixels = int(30.0 / target_res) # 30 / 0.6 = 50 pixels
         if trim_pixels > 0 and trim_pixels * 2 < min(width, height):
             logger.info(f"Trimming {trim_pixels} pixels ({30}m) from edges")
             chm_uint16 = chm_uint16[trim_pixels:-trim_pixels, trim_pixels:-trim_pixels]
             # Update transform
-            from rasterio.transform import Affine
             transform = transform * Affine.translation(trim_pixels, trim_pixels)
             height, width = chm_uint16.shape
         
-        # 6. Save as COG
+        # 7. Save as COG
         output_path = output_dir / f"{image_id.split('/')[-1]}_chm.tif"
         self._save_cog(chm_uint16, output_path, transform, crs)
         
@@ -296,8 +328,6 @@ class GEEInferenceStreamer:
             dst.write(data, 1)
             
         # Convert to COG
-        # Ideally use rio-cogeo python API instead of subprocess if possible, but subprocess is robust
-        # Or simpler:
         cmd = [
             'rio', 'cogeo', 'create',
             str(temp_path),
