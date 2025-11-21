@@ -77,7 +77,7 @@ class GEEInferenceStreamer:
         # Get bounds in EPSG:5070
         # We transform the geometry to 5070 to get accurate meter dimensions
         geom_5070 = geometry.transform('EPSG:5070', 1) # 1m error margin
-        coords = geom_5070.bounds().getInfo()['coordinates'][0]
+        coords = geom_5070.bounds(1).getInfo()['coordinates'][0]
         xs = [p[0] for p in coords]
         ys = [p[1] for p in coords]
         min_x, max_x = min(xs), max(xs)
