@@ -222,7 +222,7 @@ ehthumbs_vista.db
 # ============================================================================
 
 # Model weights and checkpoints
-*.pt
+# *.pt
 *.pth
 *.ckpt
 *.pkl

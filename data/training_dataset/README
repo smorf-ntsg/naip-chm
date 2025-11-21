@@ -1,0 +1,13 @@
+# Training Dataset
+
+The training dataset required for this project can be downloaded from the Univeristy of Montana Rangeland server.
+
+## Download Location
+
+**URL:** http://rangeland.ntsg.umt.edu/data/rap/chm-naip/
+
+Please visit the URL above to download the necessary training data files.
+
+## Reference
+
+Allred, B.W., S.E. McCord, and S.L. Morford. 2024. Canopy height model and NAIP imagery pairs across CONUS. bioRxiv 2024.12.24.630202 doi: 10.1101/2024.12.24.630202
