@@ -25,6 +25,9 @@ from src.utils.gee import get_naip_doqq_geometry, fetch_chip_data, fetch_conditi
 
 logger = logging.getLogger(__name__)
 
+# Suppress noisy rasterio warnings about 4-band TIFFs
+logging.getLogger("rasterio").setLevel(logging.ERROR)
+
 class GEEInferenceStreamer:
     """
     Orchestrates streaming inference from GEE.
@@ -194,6 +197,8 @@ class GEEInferenceStreamer:
 
         # Use ThreadPoolExecutor
         processed_count = 0
+        failed_count = 0
+        
         with ThreadPoolExecutor(max_workers=8) as executor:
             # Submit all tasks
             futures = []
@@ -204,22 +209,31 @@ class GEEInferenceStreamer:
             from tqdm import tqdm
             
             for future in tqdm(as_completed(futures), total=len(chips), desc="Inference"):
-                result = future.result()
-                if result is None or result['cond'] is None:
-                    continue
-                
-                # Unpack
-                img_data = result['img']
-                cond_data = result['cond']
-                r_s, c_s, r_e, c_e = result['coords']
-                
-                # Prepare inputs
-                image_tensor = torch.from_numpy(img_data).unsqueeze(0).to(self.device)
-                
-                # Conditioning
                 try:
+                    result = future.result()
+                    if result is None:
+                        failed_count += 1
+                        continue
+                    
+                    if result['cond'] is None:
+                        failed_count += 1
+                        logger.warning(f"Chip {result['idx']} skipped: Missing conditioning data")
+                        continue
+                    
+                    # Unpack
+                    img_data = result['img']
+                    cond_data = result['cond']
+                    r_s, c_s, r_e, c_e = result['coords']
+                    
+                    # Prepare inputs
+                    image_tensor = torch.from_numpy(img_data).unsqueeze(0).to(self.device)
+                    
+                    # Conditioning
                     feats = self._process_features(cond_data)
-                    if feats is None: continue
+                    if feats is None: 
+                        failed_count += 1
+                        logger.warning(f"Chip {result['idx']} skipped: Feature processing failed (NLCD/Eco check)")
+                        continue
                     
                     continuous, nlcd, eco = feats
                     continuous = continuous.unsqueeze(0).to(self.device)
@@ -243,9 +257,12 @@ class GEEInferenceStreamer:
                     weight_output[r_s:r_e, c_s:c_e] += mask
                     
                     processed_count += 1
-                    
+                        
                 except Exception as e:
-                    logger.error(f"Inference failed for chip {result['idx']}: {e}")
+                    failed_count += 1
+                    logger.error(f"Processing failed for chip: {e}")
+
+        logger.info(f"Processing complete. Processed: {processed_count}, Failed: {failed_count} ({failed_count/len(chips)*100:.1f}%)")
         
         # Finalize
         valid_weights = weight_output > 0
