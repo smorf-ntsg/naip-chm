@@ -35,16 +35,26 @@ You can download the training data from the University of Montana Rangeland serv
 See `data/training_dataset/README` for more details.
 
 ### 2. Inference Assets
-This repository includes the necessary assets to run inference:
+This repository includes the pre-trained model weights, but static conditioning rasters must be downloaded separately to support local inference.
+
 *   **Pre-trained Model Weights:** Located at `model/model_20251016.pt`
-*   **Static Conditioning Rasters:** Located in `data/conditioning_data/` (includes elevation, climate, soil, NLCD, and ecoregion data).
+*   **Static Conditioning Rasters:** To support local inference, download the required environmental raster data (elevation, climate, soil, NLCD, and ecoregion) by running:
+    ```bash
+    python scripts/download_conditioning_data.py
+    ```
+    This script will download the files to `data/conditioning_data/` and optionally download a sample NAIP DOQQ for testing.
+
+### 3. CONUS-wide CHM Product
+This repository supports the generation of a CONUS-wide Canopy Height Model dataset (24.82 TB).
+The generated assets are available on Google Cloud Storage (`gs://naip-chm-assets`).
+For detailed information on accessing the data, file structure, and metadata, please refer to `data/gcs_assets/README`.
 
 ---
 
 ## Usage
 
 ### Running Inference
-You can run the model on a standard NAIP DOQQ (Digital Ortho Quarter Quad) using the `scripts/inference.py` script. A sample NAIP image is provided in `data/naip_doqqs/`.
+You can run the model on a standard NAIP DOQQ (Digital Ortho Quarter Quad) using the `scripts/inference.py` script. If you downloaded the sample NAIP image using `scripts/download_conditioning_data.py`, it will be located in `data/naip_doqqs/`.
 
 **Example Command:**
 ```bash
@@ -66,14 +76,29 @@ python scripts/inference.py \
 *   `--chip-overlap`: (Optional) Overlap between chips (default: 0.2).
 
 ### Training the Model
-To train the model from scratch or fine-tune it, use the `scripts/train.py` script. Ensure you have downloaded the training dataset and updated the `configs/config.yaml` file to point to the correct data paths.
+To train the model, you first need to generate the metadata Parquet file which includes extracted environmental features.
 
-**Command:**
-```bash
-python scripts/train.py \
-  --config configs/config.yaml \
-  --experiment_name my_experiment
-```
+1.  **Generate Metadata:**
+    Run the metadata generation script using the downloaded training dataset CSV and the static conditioning rasters.
+    ```bash
+    python scripts/create_metadata_parquet.py \
+      --csv_path data/training_dataset/files.csv \
+      --elevation_path data/conditioning_data/elevation.tif \
+      --pca_path data/conditioning_data/climate_pca.tif \
+      --soil_pca_path data/conditioning_data/soil-pca.tif \
+      --output_path data/training_metadata/metadata.parquet
+    ```
+    *Note: Ensure `files.csv` is available from the downloaded training dataset.*
+
+2.  **Run Training:**
+    Use the `scripts/train.py` script. Ensure you have updated `configs/config.yaml` to point to the generated `metadata.parquet` and other data paths.
+
+    **Command:**
+    ```bash
+    python scripts/train.py \
+      --config configs/config.yaml \
+      --experiment_name my_experiment
+    ```
 
 **Distributed Training:**
 The script supports Distributed Data Parallel (DDP) training. To run on multiple GPUs (e.g., 2 GPUs):
