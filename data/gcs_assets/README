@@ -19,13 +19,14 @@ Coverage: CONUS (Continental United States)
 Resolution: 0.6 meters 
 Temporal Range: 2012-2023 (96% of data from 2022 - 2023)
 
-
 BUCKET STRUCTURE
 -----------------
 
 The bucket is organized hierarchically by acquisition year and UTM zone:
 
 gs://naip-chm-assets/
+├── gcs_assets_index.geojson
+├── gcs_assets_index.shp.zip
 ├── 2021/
 │   ├── 10/
 │   │   ├── m_QQQQQQQ_QQ_10_FFF_YYYYMMDD_chm.tif
@@ -59,7 +60,7 @@ Components:
   QQQQQQQ     = USGS 7.5-minute quadrangle ID
   QQ          = Quarter-quad position (nw, ne, sw, se)
   ZZ          = UTM zone number (10-19)
-  FFF         = State FIPS code
+  FFF         = Resolution (cm)
   YYYYMMDD    = Acquisition date (imagery collection)
   YYYYMMDD    = Processing date (optional, NAIP mosaic processing)
   _chm        = Canopy Height Model suffix
@@ -86,7 +87,7 @@ COG Properties:
   Format:        Cloud-Optimized GeoTIFF (COG)
   Tiling:        512×512 pixel blocks
   Compression:   DEFLATE with predictor=2
-  Overviews:     Yes (for efficient visualization)
+  Overviews:     Yes
   
 Spatial Reference:
   Each file retains the UTM projection of its source NAIP imagery. Files are
@@ -201,23 +202,6 @@ Read directly from GCS without downloading:
       chm_meters = chm_data / 100.0  # Convert to meters
 
 
-QUERYING BY REGION
-------------------
-
-Files are organized by UTM zone for efficient regional queries:
-
-UTM Zone Coverage (approximate):
-  Zone 10: Western US (Pacific coast, California, Oregon, Washington)
-  Zone 11: Western US (Nevada, parts of California, Idaho, Montana)
-  Zone 12: Western US (Utah, Arizona, Wyoming, Montana)
-  Zone 13: Mountain West (Colorado, New Mexico, Wyoming, Montana)
-  Zone 14: Central US (Kansas, Oklahoma, Texas, Dakotas)
-  Zone 15: Central US (Iowa, Missouri, Arkansas, Louisiana, Minnesota)
-  Zone 16: Midwest (Illinois, Wisconsin, Tennessee, Mississippi)
-  Zone 17: East (Michigan, Indiana, Ohio, Kentucky, Georgia, Florida)
-  Zone 18: East (Pennsylvania, New York, Carolinas, Virginia)
-  Zone 19: Northeast (Maine, New England states)
-
 GOOGLE EARTH ENGINE INTEGRATION
 --------------------------------
 
@@ -243,48 +227,46 @@ Example Earth Engine Code:
   Map.addLayer(chm.divide(100), {min: 0, max: 30, palette: ['white', 'green']}, 'CHM');
 
 
-DATA GENERATION METHODOLOGY
----------------------------
-
-Processing Pipeline:
-1. Input: 5-band NAIP imagery (R, G, B, NIR, Mask) at 0.6m resolution
-2. Chip into overlapping 432×432 pixel tiles (20% overlap)
-3. Extract auxiliary features at each chip center:
-   - Elevation (digital elevation model)
-   - Climate variables (PCA-transformed)
-   - Soil properties (PCA-transformed)
-   - Land cover class (NLCD)
-   - Ecoregion (EPA Level III)
-   - Day of year (sin/cos encoded)
-4. Run deep learning inference
-5. Crop and mosaic chips 
-6. Convert predictions to centimeters (×100 scaling)
-7. Save as Cloud-Optimized GeoTIFF
-
-Model Architecture: U-Net with Feature-wise Linear Modulation
-Training Data: USGS 3DEP lidar derived canopy height models
-Model Version: See manifest files for specific model checkpoint
-
 INDEX FILES
 -----------
 
 Complete asset inventories available in the top level of this bucket:
 
-  gcs_assets_index.json - Structured JSON index with full metadata
-  gcs_assets_index.csv  - Tabular CSV for analysis and filtering
+  gcs_assets_index.geojson - Structured JSON index with full metadata
+  gcs_assets_index.shp.zip - Shapefile archive with geometry and full metadata
 
-CHANGELOG
----------
+Both index files contain the following attributes for each CHM asset:
 
-2025-11-19: Initial release of 213,567 CHM assets (24.82 TB) for CONUS.
+  - acquisition_date:  Date of NAIP imagery acquisition (YYYY-MM-DD)
+  - doy:               Day of year of acquisition
+  - gcs_cog_path:      Full GCS URI to the CHM GeoTIFF
+  - gcs_metadata_path: Full GCS URI to the asset manifest JSON
+  - quad_id:           USGS 7.5-minute quadrangle identifier
+  - quarter:           Quarter-quad position (ne, nw, se, sw)
+  - utm_zone:          UTM zone number
+  - year:              Year of acquisition
 
 
-LICENSE AND CITATION
---------------------
+
+CITATION
+--------
+
+If you use this dataset, please cite:
+
+A 0.6-meter resolution canopy height model for the contiguous United States
+Authors: Scott L. Morford, Brady W. Allred, Shea P. Coons, Anthony A. Marcozzi, Sarah E. McCord, David E. Naugle
+
+Note: There will first be a preprint at bioRxiv soon
+
+Zenodo Archive: https://doi.org/10.5281/zenodo.17664995
+
+
+LICENSE
+-------
 
 MIT License
 
-Copyright (c) 2025 Scott L. Morford
+Copyright (c) 2025 University of Montana
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -304,21 +286,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Citation:
-If you use this dataset, please cite:
-
-A 0.6-meter resolution canopy height model for the contiguous United States
-Authors: Scott L. Morford, Brady W. Allred, Shea P. Coons, Anthony A. Marcozzi, Sarah E. McCord, David E. Naugle
-
-Note: There will first be a preprint at bioRxiv soon
-
-Zenodo Archive: [Zenodo Repository URL to be added]
-
 CONTACT 
 -------
 
 Contact: scott.morford@umontana.edu
-GitHub Repository: [GitHub Repository URL to be added]
+GitHub Repository: https://github.com/smorf-ntsg/naip-chm
 
 VERSION INFORMATION
 -------------------
@@ -327,6 +299,12 @@ Bucket Created: October 2025
 Last Updated: November 2025
 Total Assets: 213,567 CHM GeoTIFFs
 Data Version: 1.0
+
+CHANGELOG
+---------
+
+2025-11-19: Initial release of 213,567 CHM assets (24.82 TB) for CONUS.
+
 
 ================================================================================
                             End of README
