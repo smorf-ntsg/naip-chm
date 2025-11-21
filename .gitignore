@@ -246,7 +246,7 @@ tensorboard_logs/
 lightning_logs/
 
 # Data directories (often too large for git)
-data/
+# data/
 datasets/
 raw_data/
 processed_data/
