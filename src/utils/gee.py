@@ -80,16 +80,18 @@ def fetch_chip_data(
     image_id: str,
     region: ee.Geometry,
     shape: Tuple[int, int] = (432, 432),
-    crs: str = 'EPSG:5070'
+    crs: str = 'EPSG:5070',
+    max_retries: int = 3
 ) -> np.ndarray:
     """
     Fetch NAIP raster data for a specific chip.
     
     Args:
         image_id: NAIP image ID.
-        region: Chip geometry (EPSG:5070).
+        region: Chip geometry.
         shape: Target shape (height, width).
-        crs: Target CRS (default EPSG:5070).
+        crs: Target CRS.
+        max_retries: Number of retries for network requests.
         
     Returns:
         Numpy array (4, H, W) normalized to 0-1.
@@ -97,53 +99,56 @@ def fetch_chip_data(
     # Select bands R, G, B, N
     image = ee.Image(image_id).select(['R', 'G', 'B', 'N'])
     
-    # Get download URL for the chip
-    # Using getDownloadURL is often faster/easier for small chips than computePixels 
-    # which requires more complex parsing of raw bytes.
-    # We request it in the target CRS and dimensions.
-    try:
-        url = image.getDownloadURL({
-            'region': region,
-            'dimensions': list(reversed(shape)), # EE expects WxH? Actually strictly it's WIDTHxHEIGHT or just one number
-            'crs': crs,
-            'format': 'GEO_TIFF'
-        })
-        
-        # Fetch and read
-        response = requests.get(url)
-        response.raise_for_status()
-        
-        with rasterio.open(BytesIO(response.content)) as src:
-            # Read all 4 bands
-            # Shape will be (4, H, W)
-            data = src.read()
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            # Get download URL (this can sometimes fail or time out)
+            url = image.getDownloadURL({
+                'region': region,
+                'dimensions': list(reversed(shape)), 
+                'crs': crs,
+                'format': 'GEO_TIFF'
+            })
             
-            # Handle potential size mismatch due to projection effects
-            # If we get slightly different size, we might need to crop/pad or resize
-            # But passing 'dimensions' to GEE usually enforces the size.
-            if data.shape[1:] != shape:
-                # This can happen if GEE's grid alignment is slightly off
-                # For now, we assume strict adherence or resize
-                # Simple resize if needed
-                from rasterio.enums import Resampling
-                if data.shape[1] != shape[0] or data.shape[2] != shape[1]:
-                    logger.warning(f"Got shape {data.shape[1:]}, expected {shape}. Resizing.")
-                    new_data = np.empty((4, *shape), dtype=data.dtype)
-                    for i in range(4):
-                        # Simple bilinear interpolation
-                        # (This is a fallback, ideally GEE gives correct size)
-                        import cv2 # Optional dependency? Or just use rasterio reproject
-                        # Using rasterio reproject logic would be better but we don't have a transform here easily
-                        # Let's just strict check for now
-                        pass 
+            # Fetch content
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
             
-            # Normalize to 0-1
-            data = data.astype(np.float32) / 255.0
-            return data
+            with rasterio.open(BytesIO(response.content)) as src:
+                # Read all 4 bands
+                # Shape will be (4, H, W)
+                data = src.read()
+                
+                # Handle potential size mismatch due to projection effects
+                # If we get slightly different size, we might need to crop/pad or resize
+                # But passing 'dimensions' to GEE usually enforces the size.
+                if data.shape[1:] != shape:
+                    # This can happen if GEE's grid alignment is slightly off
+                    # For now, we assume strict adherence or resize
+                    # Simple resize if needed
+                    from rasterio.enums import Resampling
+                    if data.shape[1] != shape[0] or data.shape[2] != shape[1]:
+                        logger.warning(f"Got shape {data.shape[1:]}, expected {shape}. Resizing.")
+                        new_data = np.empty((4, *shape), dtype=data.dtype)
+                        for i in range(4):
+                            # Simple bilinear interpolation
+                            # (This is a fallback, ideally GEE gives correct size)
+                            import cv2 # Optional dependency? Or just use rasterio reproject
+                            # Using rasterio reproject logic would be better but we don't have a transform here easily
+                            # Let's just strict check for now
+                            pass 
+                
+                # Normalize to 0-1
+                data = data.astype(np.float32) / 255.0
+                return data
             
-    except Exception as e:
-        logger.error(f"Error fetching chip data: {e}")
-        raise
+        except Exception as e:
+            last_error = e
+            logger.warning(f"Fetch attempt {attempt+1}/{max_retries} failed: {e}")
+            time.sleep(2 ** attempt) # Exponential backoff
+            
+    logger.error(f"Failed to fetch chip data after {max_retries} attempts: {last_error}")
+    raise last_error
 
 def fetch_conditioning_vector(
     lat: float, 
@@ -200,25 +205,29 @@ def fetch_conditioning_vector(
         .addBands(ecoregion)
     )
     
-    # Reduce region (sample at point)
-    # scale=30 is typical for these datasets (NLCD/SRTM-derived)
-    try:
-        result = stack.reduceRegion(
-            reducer=ee.Reducer.first(),
-            geometry=point,
-            scale=30,
-            crs='EPSG:5070' # Sample in consistent projection
-        ).getInfo()
-        
-        if not result:
-            logger.warning(f"No conditioning data found at ({lat}, {lon})")
-            return None
+    # Reduce region with retry
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            result = stack.reduceRegion(
+                reducer=ee.Reducer.first(),
+                geometry=point,
+                scale=30,
+                crs='EPSG:5070'
+            ).getInfo()
             
-        # Add DOY
-        result['doy'] = doy
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Error fetching conditioning vector: {e}")
-        return None
+            if not result:
+                logger.warning(f"No conditioning data found at ({lat}, {lon})")
+                return None
+                
+            # Add DOY
+            result['doy'] = doy
+            
+            return result
+            
+        except Exception as e:
+            logger.warning(f"Conditioning fetch attempt {attempt+1}/{max_retries} failed: {e}")
+            time.sleep(2 ** attempt)
+            
+    logger.error(f"Failed to fetch conditioning vector at ({lat}, {lon})")
+    return None

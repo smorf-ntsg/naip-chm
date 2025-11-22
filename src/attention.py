@@ -113,4 +113,4 @@ if __name__ == "__main__":
         output_k3 = cbam_k3(x)
         print(f"  Parameters (kernel=3): {sum(p.numel() for p in cbam_k3.parameters()):,}")
     
-    print("\n✅ CBAM module tests passed!")
+    print("\n CBAM module tests passed.")

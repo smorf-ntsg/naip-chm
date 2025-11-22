@@ -1,10 +1,10 @@
-# NAIP-CHM: A 0.6-meter Resolution Canopy Height Model for the Contiguous United States
+# NAIP-CHM: A 0.6-meter Resolution Canopy Height and Structure Model for the Contiguous United States
 
 ## Overview
 
-This repository contains the source code, trained model weights, and inference tools for **NAIP-CHM**, a project that generates a 0.6-meter resolution canopy height model (CHM) for the contiguous United States using National Agriculture Imagery Program (NAIP) aerial imagery.
+This repository contains the source code, trained model weights, and inference tools for **NAIP-CHM**, a project that generates a 0.6-meter resolution canopy height ans structure model (CHM) for the contiguous United States using National Agriculture Imagery Program (NAIP) aerial imagery.
 
-This codebase supports the upcoming paper: **A 0.6-meter resolution canopy height model for the contiguous United States**.
+This codebase supports the upcoming paper: **A 0.6-meter resolution canopy height and structure model for the contiguous United States**.
 
 The repository provides:
 *   **Inference Pipeline:** Tools to generate canopy height models from NAIP DOQQs using a pre-trained U-Net model.
@@ -14,7 +14,7 @@ The repository provides:
 
 ## Installation
 
-This codebase requires **Python 3.11+**.
+This codebase used **Python 3.11**.
 
 1.  Ensure you have the repository files extracted to your local machine.
 
@@ -46,12 +46,23 @@ This repository includes the pre-trained model weights, but static conditioning 
 
 ### 3. CONUS-wide CHM Product
 This repository supports the generation of a CONUS-wide Canopy Height Model dataset (24.82 TB).
+
+**Google Earth Engine:**
+*   **App Viewer:** Explore the CONUS-wide product using our interactive app: https://naip-chm.projects.earthengine.app/view/naip-chm-a-conus-structure-model
+*   **Earth Engine Asset:** The dataset is available as an Earth Engine asset: `projects/naip-chm/assets/conus-structure-model`
+
+**Google Cloud Storage (Requester Pays):**
 The generated assets are available on Google Cloud Storage (`gs://naip-chm-assets`).
+**Note:** This is a **Requester Pays** bucket.
 For detailed information on accessing the data, file structure, and metadata, please refer to `data/gcs_assets/README`.
 
 ---
 
 ## Usage
+
+### Google Colab (No-Code/Low-Code)
+For users who prefer a no-code or low-code environment, we provide a Google Colab notebook to generate data:
+*   **Notebook:** `notebooks/gee_inference_colab.ipynb`
 
 ### Running Inference
 You can run the model on a standard NAIP DOQQ (Digital Ortho Quarter Quad) using the `scripts/inference.py` script. If you downloaded the sample NAIP image using `scripts/download_conditioning_data.py`, it will be located in `data/naip_doqqs/`.
@@ -114,7 +125,7 @@ torchrun --nproc_per_node=2 scripts/train.py \
 
 If you use this dataset or code in your research, please cite the following manuscript:
 
-> Morford, S. L., Allred, B. W., Coons, S. P., Marcozzi, A. A., McCord, S. E., & Naugle, D. E. (2025). A 0.6-meter resolution canopy height model for the contiguous United States. *[Journal Name TBD]*.
+> Morford, S. L., Allred, B. W., Coons, S. P., Marcozzi, A. A., McCord, S. E., & Naugle, D. E. (XXXX). A 0.6-meter resolution canopy height model for the contiguous United States. *[Journal Name TBD]*.
 
 **Training Dataset Reference:**
 > Allred, B. W., McCord, S. E. & Morford, S. L. Canopy height model and NAIP imagery pairs across CONUS. *Sci. Data* 12, 322 (2025).

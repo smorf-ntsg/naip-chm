@@ -1,5 +1,5 @@
 ================================================================================
-            NAIP-CHM: A CANOPY HEIGHT MODEL (CHM) DATASET FOR CONUS
+      NAIP-CHM: A CANOPY HEIGHT MODEL (CHM) AND STRUCTURE DATASET FOR CONUS
                         Google Cloud Storage Bucket
                            gs://naip-chm-assets
 ================================================================================
