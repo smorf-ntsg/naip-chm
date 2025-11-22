@@ -4,6 +4,9 @@
 
 This repository contains the source code, trained model weights, and inference tools for **NAIP-CHM**, a project that generates a 0.6-meter resolution canopy height ans structure model (CHM) for the contiguous United States using National Agriculture Imagery Program (NAIP) aerial imagery.
 
+**Explore the CONUS-wide product and visualize model quality/availability using our interactive Google Earth Engine App:**
+https://naip-chm.projects.earthengine.app/view/naip-chm-a-conus-structure-model
+
 This codebase supports the upcoming paper: **A 0.6-meter resolution canopy height and structure model for the contiguous United States**.
 
 The repository provides:
@@ -48,7 +51,6 @@ This repository includes the pre-trained model weights, but static conditioning 
 This repository supports the generation of a CONUS-wide Canopy Height Model dataset (24.82 TB).
 
 **Google Earth Engine:**
-*   **App Viewer:** Explore the CONUS-wide product using our interactive app: https://naip-chm.projects.earthengine.app/view/naip-chm-a-conus-structure-model
 *   **Earth Engine Asset:** The dataset is available as an Earth Engine asset: `projects/naip-chm/assets/conus-structure-model`
 
 **Google Cloud Storage (Requester Pays):**
@@ -126,6 +128,8 @@ torchrun --nproc_per_node=2 scripts/train.py \
 If you use this dataset or code in your research, please cite the following manuscript:
 
 > Morford, S. L., Allred, B. W., Coons, S. P., Marcozzi, A. A., McCord, S. E., & Naugle, D. E. (XXXX). A 0.6-meter resolution canopy height model for the contiguous United States. *[Journal Name TBD]*.
+
+The version-of-record repository for the manuscript can be found at Zenodo *[URL]*
 
 **Training Dataset Reference:**
 > Allred, B. W., McCord, S. E. & Morford, S. L. Canopy height model and NAIP imagery pairs across CONUS. *Sci. Data* 12, 322 (2025).
