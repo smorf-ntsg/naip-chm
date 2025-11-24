@@ -15,27 +15,18 @@ The repository provides:
 *   **Pre-trained Model:** The final model weights used to generate the CONUS-wide dataset.
 *   **Conditioning Data:** Static environmental raster data required for model inference.
 
-## Installation
-
-This codebase used **Python 3.11**.
-
-1.  Ensure you have the repository files extracted to your local machine.
-
-2.  Install the required dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
----
-
 ## Data Access
 
-### 1. Training Dataset
-The training dataset is not included in this repository due to its size. It contains over 22 million image pairs.
-You can download the training data from the University of Montana Rangeland server:
-*   **URL:** http://rangeland.ntsg.umt.edu/data/rap/chm-naip/
+### 1. CONUS-wide CHM Product
+This repository supports the generation of a CONUS-wide Canopy Height Model dataset (24.82 TB).
 
-See `data/training_dataset/README` for more details.
+**Google Earth Engine:**
+*   **Earth Engine Asset:** The dataset is available as an Earth Engine asset: `projects/naip-chm/assets/conus-structure-model`
+
+**Google Cloud Storage (Requester Pays):**
+The generated assets are available on Google Cloud Storage (`gs://naip-chm-assets`).
+**Note:** This is a **Requester Pays** bucket.
+For detailed information on accessing the data, file structure, and metadata, please refer to `data/gcs_assets/README`.
 
 ### 2. Inference Assets
 This repository includes the pre-trained model weights, but static conditioning rasters must be downloaded separately to support local inference.
@@ -47,16 +38,23 @@ This repository includes the pre-trained model weights, but static conditioning 
     ```
     This script will download the files to `data/conditioning_data/` and optionally download a sample NAIP DOQQ for testing.
 
-### 3. CONUS-wide CHM Product
-This repository supports the generation of a CONUS-wide Canopy Height Model dataset (24.82 TB).
+### 3. Training Dataset
+The training dataset is not included in this repository due to its size. It contains over 22 million image pairs.
+You can download the training data from the University of Montana Rangeland server:
+*   **URL:** http://rangeland.ntsg.umt.edu/data/rap/chm-naip/
 
-**Google Earth Engine:**
-*   **Earth Engine Asset:** The dataset is available as an Earth Engine asset: `projects/naip-chm/assets/conus-structure-model`
+See `data/training_dataset/README` for more details.
 
-**Google Cloud Storage (Requester Pays):**
-The generated assets are available on Google Cloud Storage (`gs://naip-chm-assets`).
-**Note:** This is a **Requester Pays** bucket.
-For detailed information on accessing the data, file structure, and metadata, please refer to `data/gcs_assets/README`.
+## Installation
+
+This codebase used **Python 3.11**.
+
+1.  Ensure you have the repository files extracted to your local machine.
+
+2.  Install the required dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 ---
 
