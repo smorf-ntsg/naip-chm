@@ -13,6 +13,12 @@ The repository provides:
 *   **Pre-trained Model:** Model weights used to generate the CONUS-wide dataset.
 *   **Conditioning Data:** Static environmental raster data required for model inference.
 
+## Model Architecture
+
+![Model Architecture](naip-chm-architecture.png)
+
+The NAIP-CHM model utilizes a U-Net architecture with approximately 22 million parameters, enhanced with attention mechanisms and multi-stage FiLM conditioning to integrate auxiliary environmental features. It processes 4-band NAIP imagery through an encoder-decoder structure while simultaneously processing environmental data (climate, soil, elevation) in a separate pathway. This design allows the model to effectively combine high-resolution visual data with broad-scale environmental context to generate precise canopy height estimations.
+
 ## Data Access
 
 ### 1. CONUS-wide CHM Product
