@@ -38,7 +38,7 @@ def main():
         "ecoregion.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/ecoregion.tif",
         "elevation.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/elevation.tif",
         "nlcd.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/nlcd.tif",
-        "soil-pca.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/soil-pca.tif"
+        "soil-pca.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/soil_pca.tif"
     }
     
     # Create directory if it doesn't exist
