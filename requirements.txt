@@ -2,6 +2,7 @@
 # Python 3.11+ required
 
 # Core dependencies
+requests
 torch==2.8.0
 torchvision==0.23.0
 numpy>=1.24.0
