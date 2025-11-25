@@ -2,17 +2,15 @@
 
 ## Overview
 
-This repository contains the source code, trained model weights, and inference tools for **NAIP-CHM**, a project that generates a 0.6-meter resolution canopy height ans structure model (CHM) for the contiguous United States using National Agriculture Imagery Program (NAIP) aerial imagery.
+This repository contains the source code, trained model weights, and inference tools for **NAIP-CHM**, a project that generates a 0.6-meter resolution canopy height and structure model (CHM) for the contiguous United States using National Agriculture Imagery Program (NAIP) aerial imagery.
 
-**Explore the CONUS-wide product and visualize model quality/availability using our interactive Google Earth Engine App:**
+**Explore the CONUS-wide product using our interactive Google Earth Engine App:**
 https://naip-chm.projects.earthengine.app/view/naip-chm-a-conus-structure-model
-
-This codebase supports the upcoming paper: **A 0.6-meter resolution canopy height and structure model for the contiguous United States**.
 
 The repository provides:
 *   **Inference Pipeline:** Tools to generate canopy height models from NAIP DOQQs using a pre-trained U-Net model.
-*   **Training Code:** Scripts to train the model on new data, including distributed training support.
-*   **Pre-trained Model:** The final model weights used to generate the CONUS-wide dataset.
+*   **Training Code:** Scripts to train the model on new data.
+*   **Pre-trained Model:** Model weights used to generate the CONUS-wide dataset.
 *   **Conditioning Data:** Static environmental raster data required for model inference.
 
 ## Data Access
@@ -23,16 +21,16 @@ This repository supports the generation of a CONUS-wide Canopy Height Model data
 **Google Earth Engine:**
 *   **Earth Engine Asset:** The dataset is available as an Earth Engine asset: `projects/naip-chm/assets/conus-structure-model`
 
-**Google Cloud Storage (Requester Pays):**
+**Google Cloud Storage:**
 The generated assets are available on Google Cloud Storage (`gs://naip-chm-assets`).
 **Note:** This is a **Requester Pays** bucket.
 For detailed information on accessing the data, file structure, and metadata, please refer to `data/gcs_assets/README`.
 
 ### 2. Inference Assets
-This repository includes the pre-trained model weights, but static conditioning rasters must be downloaded separately to support local inference.
+This repository includes the model weights, but static conditioning rasters must be downloaded separately to support local inference.
 
-*   **Pre-trained Model Weights:** Located at `model/model_20251016.pt`
-*   **Static Conditioning Rasters:** To support local inference, download the required environmental raster data (elevation, climate, soil, NLCD, and ecoregion) by running:
+*   **Model Weights:** Located at `model/model_20251016.pt`
+*   **Static Conditioning Rasters:** To support local inference, download the required environmental raster data by running:
     ```bash
     python scripts/download_conditioning_data.py
     ```
@@ -80,7 +78,7 @@ python scripts/inference.py \
 **Arguments:**
 *   `--naip-quad`: Path to the input 4-band NAIP imagery (R, G, B, NIR).
 *   `--output-dir`: Directory where the output CHM GeoTIFF and report will be saved.
-*   `--model-checkpoint`: Path to the trained model weights.
+*   `--model-checkpoint`: Path to the model weights.
 *   `--config`: Path to the configuration YAML file.
 *   `--static-rasters-dir`: Directory containing the environmental conditioning rasters.
 *   `--chip-size`: (Optional) Processing chip size (default: 432).
