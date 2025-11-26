@@ -100,7 +100,7 @@ To train the model, you first need to generate the metadata Parquet file which i
       --csv_path data/training_dataset/files.csv \
       --elevation_path data/conditioning_data/elevation.tif \
       --pca_path data/conditioning_data/climate_pca.tif \
-      --soil_pca_path data/conditioning_data/soil-pca.tif \
+      --soil_pca_path data/conditioning_data/soil_pca.tif \
       --output_path data/training_metadata/metadata.parquet
     ```
     *Note: Ensure `files.csv` is available from the downloaded training dataset.*

@@ -77,7 +77,7 @@ def run_inference(args):
     static_dir = args.static_rasters_dir
     elevation_path = static_dir / "elevation.tif"
     climate_pca_path = static_dir / "climate_pca.tif"
-    soil_pca_path = static_dir / "soil-pca.tif"
+    soil_pca_path = static_dir / "soil_pca.tif"
     nlcd_path = static_dir / "nlcd.tif"
     ecoregion_path = static_dir / "ecoregion.tif"
     
