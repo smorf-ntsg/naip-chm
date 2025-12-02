@@ -13,6 +13,10 @@ The repository provides:
 *   **Pre-trained Model:** Model weights used to generate the CONUS-wide dataset.
 *   **Conditioning Data:** Static environmental raster data required for model inference.
 
+## Example: Input (NAIP) & Output (CHM)
+
+![NAIP CHM Example](naip_chm_example.png)
+
 ## Model Architecture
 
 ![Model Architecture](naip-chm-architecture.png)
