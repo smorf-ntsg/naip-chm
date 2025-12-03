@@ -31,10 +31,14 @@ This repository supports the generation of a CONUS-wide Canopy Height Model data
 **Google Earth Engine:**
 *   **Earth Engine Asset:** The dataset is available as an Earth Engine asset: `projects/naip-chm/assets/conus-structure-model`
 
+**Direct Download (Free):**
+The entire dataset is available for free download via HTTP.
+*   **URL:** http://rangeland.ntsg.umt.edu/data/naip-chm/
+*   **Documentation:** http://rangeland.ntsg.umt.edu/data/naip-chm/README
+
 **Google Cloud Storage:**
-The generated assets are available on Google Cloud Storage (`gs://naip-chm-assets`).
-**Note:** This is a **Requester Pays** bucket.
-For detailed information on accessing the data, file structure, and metadata, please refer to `data/gcs_assets/README`.
+Users working with the data in Google Cloud can also access the data via the requester pay bucket (`gs://naip-chm-assets`).
+For detailed information, please refer to: `gs://naip-chm-assets/README`
 
 ### 2. Inference Assets
 This repository includes the model weights, but static conditioning rasters must be downloaded separately to support local inference.
@@ -51,8 +55,6 @@ The training dataset is not included in this repository due to its size. It cont
 You can download the training data from the University of Montana Rangeland server:
 *   **URL:** http://rangeland.ntsg.umt.edu/data/rap/chm-naip/
 
-See `data/training_dataset/README` for more details.
-
 ## Installation
 
 This codebase used **Python 3.11**.
@@ -64,7 +66,7 @@ This codebase used **Python 3.11**.
     pip install -r requirements.txt
     ```
 
----
+ ---
 
 ## Usage
 
@@ -136,9 +138,6 @@ If you use this dataset or code in your research, please cite the following manu
 > Morford, S. L., Allred, B. W., Coons, S. P., Marcozzi, A. A., McCord, S. E., & Naugle, D. E. (XXXX). A 0.6-meter resolution canopy height model for the contiguous United States. *[Journal Name TBD]*.
 
 The version-of-record repository for the manuscript can be found at Zenodo *[URL]*
-
-**Training Dataset Reference:**
-> Allred, B. W., McCord, S. E. & Morford, S. L. Canopy height model and NAIP imagery pairs across CONUS. *Sci. Data* 12, 322 (2025).
 
 ---
 

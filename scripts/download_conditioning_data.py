@@ -34,11 +34,11 @@ def main():
     # Conditioning data configuration
     cond_data_dir = os.path.join(data_dir, 'conditioning_data')
     cond_urls = {
-        "climate_pca.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/climate_pca.tif",
-        "ecoregion.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/ecoregion.tif",
-        "elevation.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/elevation.tif",
-        "nlcd.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/nlcd.tif",
-        "soil_pca.tif": "https://storage.googleapis.com/naip-chm-free/inference-resources/conditioning-data/soil_pca.tif"
+        "climate_pca.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/climate_pca.tif",
+        "ecoregion.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/ecoregion.tif",
+        "elevation.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/elevation.tif",
+        "nlcd.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/nlcd.tif",
+        "soil_pca.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/soil_pca.tif"
     }
     
     # Create directory if it doesn't exist
@@ -58,7 +58,7 @@ def main():
             print(f"Error downloading {filename}: {e}")
 
     # NAIP DOQQ configuration
-    naip_url = "https://storage.googleapis.com/naip-chm-free/inference-resources/naip-doqq-example/m_3812259_nw_10_060_20220519.tif"
+    naip_url = "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/naip-doqq-example/m_3812259_nw_10_060_20220519.tif"
     naip_filename = "m_3812259_nw_10_060_20220519.tif"
     naip_dir = os.path.join(data_dir, 'naip_doqqs')
     
