@@ -72,7 +72,7 @@ This codebase used **Python 3.11**.
 
 ### Google Colab (No-Code/Low-Code)
 For users who prefer a no-code or low-code environment, we provide a Google Colab notebook to generate data:
-*   **Notebook:** `notebooks/gee_inference_colab.ipynb`
+*   **Notebook:** https://colab.research.google.com/github/smorf-ntsg/naip-chm/blob/main/notebooks/gee_inference_colab.ipynb
 
 ### Running Inference
 You can run the model on a standard NAIP DOQQ (Digital Ortho Quarter Quad) using the `scripts/inference.py` script. If you downloaded the sample NAIP image using `scripts/download_conditioning_data.py`, it will be located in `data/naip_doqqs/`.
@@ -137,7 +137,7 @@ If you use this dataset or code in your research, please cite the following manu
 
 > Morford, S. L., Allred, B. W., Coons, S. P., Marcozzi, A. A., McCord, S. E., & Naugle, D. E. (XXXX). A 0.6-meter resolution canopy height model for the contiguous United States. *[Journal Name TBD]*.
 
-The version-of-record repository for the manuscript can be found at Zenodo *[URL]*
+The version-of-record repository for the manuscript can be found at Zenodo: https://doi.org/10.5281/zenodo.17664995
 
 ---
 
