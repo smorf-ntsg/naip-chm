@@ -135,7 +135,7 @@ torchrun --nproc_per_node=2 scripts/train.py \
 
 If you use this dataset or code in your research, please cite the following manuscript:
 
-> Morford, S. L., Allred, B. W., Coons, S. P., Marcozzi, A. A., McCord, S. E., Smith, J.T., & Naugle, D. E. 2025. A 0.6-meter resolution canopy height model for the contiguous United States. bioRxiv 2025.12.12.694075; doi: https://doi.org/10.64898/2025.12.12.694075
+> Morford, S. L., Allred, B. W., Coons, S. P., Marcozzi, A. A., McCord, S. E., Smith, J.T., & Naugle, D. E. 2025. A 0.6-meter resolution canopy height and structure model for the contiguous United States. bioRxiv 2025.12.12.694075; doi: https://doi.org/10.64898/2025.12.12.694075
 
 The version-of-record repository for the manuscript can be found at Zenodo: https://doi.org/10.5281/zenodo.17664995
 
