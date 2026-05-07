@@ -1,4 +1,4 @@
-# NAIP-CHM: A 0.6-meter Resolution Canopy Height and Structure Model for the Contiguous United States
+# NAIP-CHM: A 0.6-meter Resolution Canopy Height Model for the Contiguous United States
 
 ## Overview
 
