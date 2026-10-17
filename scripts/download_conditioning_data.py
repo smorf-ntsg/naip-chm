@@ -3,11 +3,16 @@ import requests
 import sys
 from tqdm import tqdm
 
+BASE_URL = "https://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources"
+
 def download_file(url, dest_path):
     """
     Download a file from a URL to a destination path with a progress bar.
+
+    Writes to a temporary .part file and renames it on success, so a failed or
+    interrupted download does not leave a partial file that later runs would skip.
     """
-    response = requests.get(url, stream=True)
+    response = requests.get(url, stream=True, timeout=60)
     response.raise_for_status()
     
     total_size = int(response.headers.get('content-length', 0))
@@ -15,16 +20,22 @@ def download_file(url, dest_path):
     
     desc = os.path.basename(dest_path)
     
-    with open(dest_path, 'wb') as file, tqdm(
-        desc=desc,
-        total=total_size,
-        unit='iB',
-        unit_scale=True,
-        unit_divisor=1024,
-    ) as bar:
-        for data in response.iter_content(block_size):
-            size = file.write(data)
-            bar.update(size)
+    tmp_path = dest_path + ".part"
+    try:
+        with open(tmp_path, 'wb') as file, tqdm(
+            desc=desc,
+            total=total_size,
+            unit='iB',
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as bar:
+            for data in response.iter_content(block_size):
+                size = file.write(data)
+                bar.update(size)
+        os.replace(tmp_path, dest_path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def main():
     # Base directories
@@ -34,11 +45,11 @@ def main():
     # Conditioning data configuration
     cond_data_dir = os.path.join(data_dir, 'conditioning_data')
     cond_urls = {
-        "climate_pca.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/climate_pca.tif",
-        "ecoregion.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/ecoregion.tif",
-        "elevation.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/elevation.tif",
-        "nlcd.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/nlcd.tif",
-        "soil_pca.tif": "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/conditioning-data/soil_pca.tif"
+        "climate_pca.tif": f"{BASE_URL}/conditioning-data/climate_pca.tif",
+        "ecoregion.tif": f"{BASE_URL}/conditioning-data/ecoregion.tif",
+        "elevation.tif": f"{BASE_URL}/conditioning-data/elevation.tif",
+        "nlcd.tif": f"{BASE_URL}/conditioning-data/nlcd.tif",
+        "soil_pca.tif": f"{BASE_URL}/conditioning-data/soil_pca.tif"
     }
     
     # Create directory if it doesn't exist
@@ -58,7 +69,7 @@ def main():
             print(f"Error downloading {filename}: {e}")
 
     # NAIP DOQQ configuration
-    naip_url = "http://rangeland.ntsg.umt.edu/data/naip-chm/inference-resources/naip-doqq-example/m_3812259_nw_10_060_20220519.tif"
+    naip_url = f"{BASE_URL}/naip-doqq-example/m_3812259_nw_10_060_20220519.tif"
     naip_filename = "m_3812259_nw_10_060_20220519.tif"
     naip_dir = os.path.join(data_dir, 'naip_doqqs')
     

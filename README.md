@@ -33,8 +33,8 @@ This repository supports the generation of a CONUS-wide Canopy Height Model data
 
 **Direct Download (Free):**
 The entire dataset is available for free download via HTTP.
-*   **URL:** http://rangeland.ntsg.umt.edu/data/naip-chm/
-*   **Documentation:** http://rangeland.ntsg.umt.edu/data/naip-chm/README
+*   **URL:** https://rangeland.ntsg.umt.edu/data/naip-chm/
+*   **Documentation:** https://rangeland.ntsg.umt.edu/data/naip-chm/README
 
 **Google Cloud Storage:**
 Users working with the data in Google Cloud can also access the data via the requester pay bucket (`gs://naip-chm-assets`).
@@ -53,7 +53,7 @@ This repository includes the model weights, but static conditioning rasters must
 ### 3. Training Dataset
 The training dataset is not included in this repository due to its size. It contains over 22 million image pairs.
 You can download the training data from the University of Montana Rangeland server:
-*   **URL:** http://rangeland.ntsg.umt.edu/data/rap/chm-naip/
+*   **URL:** https://rangeland.ntsg.umt.edu/data/rap/chm-naip/
 
 ## Installation
 
